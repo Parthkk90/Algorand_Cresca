@@ -7,7 +7,6 @@
 [![Algorand](https://img.shields.io/badge/Algorand-Powered-blue?logo=algorand)](https://algorand.com)
 [![AlgoKit](https://img.shields.io/badge/AlgoKit-3.0+-green)](https://developer.algorand.org/algokit/)
 [![Track](https://img.shields.io/badge/Track%201-Future%20of%20Finance-orange)]()
-[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 ---
 
@@ -20,22 +19,23 @@
 - [Project Structure](#project-structure)
 - [Smart Contracts](#smart-contracts)
 - [Getting Started](#getting-started)
-- [Application Flow](#application-flow)
-- [Demo Flow](#demo-flow)
+- [User Flow in Nutshell](#user-flow-in-nutshell)
 - [Contributing](#contributing)
-- [License](#license)
 
 ---
 
 ## Overview
 
-**Cresca Campus** is a decentralized finance platform designed specifically for college campuses. It leverages Algorand's unique capabilities—instant finality, native atomic transactions, soulbound NFTs, and fee pooling—to solve real problems students face every day:
+**Cresca Campus** is not just another wallet adapter project — it's a **native Algorand wallet built from the ground up for campus ecosystems**. Unlike generic wallet solutions like Pera or Algo Wallet that are designed for general crypto users, Cresca Campus is purpose-built with campus-specific features deeply integrated at the protocol level.
 
-- Splitting bills among hostel mates
-- Managing club treasuries transparently
-- Buying event tickets without scalpers
-- Running transparent fundraising campaigns
-- Onboarding students with zero crypto experience
+**Why not just use Pera Wallet?** Because students don't need another generic crypto wallet — they need a **campus finance super-app** that understands their daily workflows: splitting dinner bills, managing club funds, buying fest tickets, and crowdfunding for causes. Cresca Campus delivers all of this with Algorand-native primitives, not bolted-on features.
+
+### What Makes This Different
+
+- **Native Wallet Experience** — No third-party wallet adapters, no external dependencies
+- **Campus-First Design** — Every feature solves a real student pain point
+- **Protocol-Level Security** — Soulbound tickets, atomic settlements, multi-sig treasuries
+- **Zero-Friction Onboarding** — Fee sponsorship means students start transacting immediately
 
 ### Why Algorand?
 
@@ -95,7 +95,7 @@
 
 ###  Bonus: Gasless Onboarding
 - **Atomic Fee Pooling**: App sponsors first transactions
-- **Liquid Auth** (Pera Wallet): Passkey login, no seed phrase
+- **Native Wallet**: Built-in passkey authentication, no seed phrase hassle
 - New students transact on day one with zero crypto knowledge
 
 ---
@@ -104,11 +104,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND LAYER                           │
-│                    (React / Next.js + TailwindCSS)              │
+│                        MOBILE APP LAYER                         │
+│                    (React Native + Expo)                        │
 ├─────────────────────────────────────────────────────────────────┤
-│                     WALLET & AUTH LAYER                         │
-│              Pera Wallet + Liquid Auth + use-wallet v4          │
+│                     NATIVE WALLET LAYER                         │
+│         Built-in Wallet • Passkey Auth • Fee Sponsorship        │
 ├─────────────────────────────────────────────────────────────────┤
 │                    APPLICATION LAYER                            │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
@@ -128,20 +128,13 @@
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Blockchain** | Algorand Testnet → Mainnet | L1 with instant finality |
-| **Smart Contracts** | Python + AlgoKit 3.x | ARC-4 ABI compliant contracts |
-| **Contract Framework** | Puya (Algorand Python) | Modern Algorand development |
-| **Frontend** | Next.js 14 + React 18 | Server-side rendering, fast UX |
-| **Styling** | TailwindCSS + shadcn/ui | Clean, responsive UI |
-| **Wallet** | Pera Wallet + Liquid Auth | Passkey login, no seed phrase |
-| **Wallet Connector** | use-wallet v4 | Multi-wallet abstraction |
-| **NFT Standard** | ARC-71 (Soulbound) | Non-transferable tickets |
-| **Metadata** | ARC-69 | On-chain ticket metadata |
-| **Indexing** | Algorand Indexer v2 | Transaction history (free) |
-| **Fee Sponsorship** | Atomic Fee Pooling | Gasless onboarding |
-| **Deployment** | AlgoKit deploy | One-command deploys |
+| Layer | Technology |
+|-------|------------|
+| **Blockchain** | Algorand (Testnet/Mainnet) |
+| **Smart Contracts** | PyTeal + AlgoKit 3.x |
+| **Mobile App** | React Native + Expo |
+| **NFT Standard** | ARC-71 (Soulbound) + ARC-69 |
+| **Fee Sponsorship** | Atomic Fee Pooling |
 
 ---
 
@@ -221,6 +214,16 @@ crescacam/
 ---
 
 ## Smart Contracts
+
+### Deployed on Algorand Testnet
+
+| Contract | App ID | Explorer |
+|----------|--------|----------|
+| **DAO Treasury** | `755399773` | [View on Lora](https://lora.algokit.io/testnet/application/755399773) |
+| **Soulbound Ticket** | `755399774` | [View on Lora](https://lora.algokit.io/testnet/application/755399774) |
+| **Fundraising** | `755399775` | [View on Lora](https://lora.algokit.io/testnet/application/755399775) |
+
+---
 
 ### 1. Expense Splitter (`contracts/expense_splitter/contract.py`)
 
@@ -311,96 +314,41 @@ npm install
 npm run dev
 ```
 
-### Environment Variables
-
-```env
-# .env.local (frontend)
-NEXT_PUBLIC_ALGOD_SERVER=http://localhost:4001
-NEXT_PUBLIC_ALGOD_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-NEXT_PUBLIC_INDEXER_SERVER=http://localhost:8980
-NEXT_PUBLIC_NETWORK=localnet
-
-# Sponsor wallet for fee pooling
-SPONSOR_MNEMONIC="your 25 word mnemonic here"
-```
-
 ---
 
-## Application Flow
+## User Flow in Nutshell
 
-### User Journey
+<div style="overflow-x: auto; white-space: nowrap;">
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           NEW USER ONBOARDING                                │
-│  ┌─────────┐    ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐  │
-│  │ Scan QR │ -> │ Create      │ -> │ Fee Sponsor  │ -> │ Ready to        │  │
-│  │ Code    │    │ Passkey     │    │ First Txn    │    │ Transact!       │  │
-│  └─────────┘    └─────────────┘    └──────────────┘    └─────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                          EXPENSE SPLITTING FLOW                              │
-│                                                                              │
-│  User A creates split  ->  Add members (B, C, D)  ->  Members join group    │
-│         ↓                                                                    │
-│  Add expenses with payer info  ->  System calculates balances               │
-│         ↓                                                                    │
-│  "Settle All" triggers atomic group  ->  All debts cleared in 1 block       │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                          DAO TREASURY FLOW                                   │
-│                                                                              │
-│  Initialize M-of-N treasury  ->  Add authorized signers                     │
-│         ↓                                                                    │
-│  Member creates spending proposal  ->  Proposal visible to all signers      │
-│         ↓                                                                    │
-│  Signers approve on-chain  ->  Threshold reached  ->  Funds released        │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         SOULBOUND TICKET FLOW                                │
-│                                                                              │
-│  Event organizer creates event  ->  Set max tickets & price                 │
-│         ↓                                                                    │
-│  Student purchases ticket  ->  ARC-71 NFT minted (frozen to wallet)         │
-│         ↓                                                                    │
-│  At event gate: QR scan  ->  On-chain verification  ->  Entry granted       │
-│         ↓                                                                    │
-│  Transfer attempt  ->  BLOCKED (protocol-level freeze)  ->  No scalping!    │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         FUNDRAISING ESCROW FLOW                              │
-│                                                                              │
-│  Creator sets campaign  ->  Define goal, deadline, milestones               │
-│         ↓                                                                    │
-│  Donors contribute to escrow  ->  Funds locked in smart contract            │
-│         ↓                                                                    │
-│  IF goal met + milestone achieved  ->  Inner txn releases funds             │
-│  IF deadline passed + goal not met  ->  Auto-refund to donors               │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  DOWNLOAD   │    │   CREATE    │    │    FEE      │    │   START     │    │    USE      │
+│    APP      │ -> │   WALLET    │ -> │  SPONSORED  │ -> │ TRANSACTING │ -> │  FEATURES   │
+│             │    │  (Passkey)  │    │   FUNDING   │    │             │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+        │                 │                 │                 │                   │
+        v                 v                 v                 v                   v
+   React Native      No seed phrase     Zero gas fees    Send/Receive      Split expenses
+   Expo App          Just biometrics    to start         ALGO instantly    DAO Treasury
+                                                                           Buy tickets
+                                                                           Fundraise
 ```
 
-### Key Interactions
+</div>
 
-| Action | Smart Contract | Algorand Primitive |
-|--------|---------------|-------------------|
-| Send payment | P2P Payment | `PaymentTxn` |
-| Create expense group | Expense Splitter | App Create + Box Storage |
-| Settle debts | Expense Splitter | Atomic Group (16 txns) |
-| Propose spending | DAO Treasury | App Call + Box Update |
-| Execute approved spend | DAO Treasury | Inner Transaction |
-| Mint event ticket | Soulbound Ticket | ASA Create (frozen) |
-| Verify ticket holder | Soulbound Ticket | App Call + ASA Balance Check |
-| Donate to campaign | Fundraising | App Call + Payment |
-| Release milestone funds | Fundraising | Inner Transaction |
-| Refund failed campaign | Fundraising | Inner Transaction |
+### Core User Flows
+
+<div style="overflow-x: auto;">
+
+| Flow | User Action | What Happens On-Chain |
+|------|-------------|----------------------|
+| **Pay a Friend** | Scan QR → Enter amount → Confirm | `PaymentTxn` settles in 2.85s |
+| **Split Expenses** | Create group → Add expenses → "Settle All" | Atomic group of up to 16 payments in 1 block |
+| **Club Treasury** | Create proposal → Members vote → Execute | Multi-sig release via inner transaction |
+| **Buy Ticket** | Select event → Pay → Receive NFT | ARC-71 soulbound NFT minted (non-transferable) |
+| **Donate** | Choose campaign → Contribute → Track | Escrow holds funds until milestone met |
+
+</div>
 
 ### Security Model
 
@@ -408,27 +356,6 @@ SPONSOR_MNEMONIC="your 25 word mnemonic here"
 - **Atomic guarantees**: Multi-party transactions succeed or fail together
 - **On-chain transparency**: All actions auditable via Algorand Indexer
 - **Protocol-level enforcement**: Soulbound tickets cannot be transferred by design
-
----
-
-## Demo Flow
-
-### 3-Minute Demo Script
-
-1. **Onboarding (30s)**  
-   New student scans QR → wallet created with passkey → first transaction sponsored via fee pooling → confirmed in 2.85s
-
-2. **Expense Split (45s)**  
-   5 friends create hostel trip split → add expenses → "Settle All" → all 5 payments execute atomically in one block
-
-3. **DAO Treasury (45s)**  
-   Tech club proposes equipment purchase → 2 members approve on-chain → funds released automatically
-
-4. **Soulbound Ticket (30s)**  
-   Student buys fest ticket → NFT minted → **attempts transfer to friend → REJECTED** (frozen) → show non-transferability in Pera
-
-5. **Fundraising (30s)**  
-   Medical campaign with escrow → friends donate → milestone met → funds released via inner transaction → toggle anonymous mode
 
 ---
 
@@ -444,17 +371,10 @@ Please ensure all smart contracts have corresponding tests and follow the ARC-4 
 
 ---
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
 ## Acknowledgments
 
 - [Algorand Foundation](https://algorand.foundation/) — For the hackathon opportunity
 - [AlgoKit](https://developer.algorand.org/algokit/) — Modern Algorand development
-- [Pera Wallet](https://perawallet.app/) — Liquid Auth passkeys
 - VIT Campus — Real-world inspiration
 
 ---

@@ -18,7 +18,7 @@ import {
 import { theme } from '../theme';
 import { Button, Card, Input } from '../components/common';
 import { useWalletStore, useSoulboundTicketStore } from '../stores';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 import { Event, Ticket } from '../../domain/models';
 
 export const TicketsScreen: React.FC = () => {
@@ -250,7 +250,7 @@ export const TicketsScreen: React.FC = () => {
         <Card style={styles.infoCard}>
           <Text style={styles.infoLabel}>App ID</Text>
           <Text style={styles.infoValue}>
-            {ALGORAND_CONFIG.contracts.soulboundTicket}
+            {AlgorandConfig.contracts.soulboundTicket}
           </Text>
           <Text style={styles.arcBadge}>ARC-71 Compliant</Text>
         </Card>

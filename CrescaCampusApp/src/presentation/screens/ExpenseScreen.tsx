@@ -16,7 +16,7 @@ import {
 import { theme } from '../theme';
 import { Button, Card, Input, Loading } from '../components/common';
 import { useWalletStore, useExpenseSplitterStore } from '../stores';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 
 export const ExpenseScreen: React.FC = () => {
   const { address } = useWalletStore();
@@ -151,7 +151,7 @@ export const ExpenseScreen: React.FC = () => {
         <Card style={styles.contractCard}>
           <Text style={styles.cardLabel}>Contract App ID</Text>
           <Text style={styles.appIdText}>
-            {ALGORAND_CONFIG.contracts.expenseSplitter}
+            {AlgorandConfig.contracts.expenseSplitter}
           </Text>
           <View style={styles.balanceRow}>
             <Text style={styles.cardLabel}>Escrow Balance</Text>

@@ -60,8 +60,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { account, mnemonic } = walletService.generateAccount();
-      await walletService.saveWallet(account.addr, mnemonic);
-      set({ address: account.addr });
+      const address = account.addr.toString();
+      await walletService.saveWallet(address, mnemonic);
+      set({ address });
       await get().refreshBalance();
       return mnemonic;
     } catch (error: any) {
@@ -77,8 +78,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const account = walletService.recoverFromMnemonic(mnemonic);
-      await walletService.saveWallet(account.addr, mnemonic);
-      set({ address: account.addr });
+      const address = account.addr.toString();
+      await walletService.saveWallet(address, mnemonic);
+      set({ address });
       await get().refreshBalance();
     } catch (error: any) {
       set({ error: error.message || 'Failed to import wallet' });

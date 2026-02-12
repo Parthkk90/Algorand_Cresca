@@ -16,7 +16,7 @@ import {
 import { theme } from '../theme';
 import { Button, Card, Input } from '../components/common';
 import { useWalletStore, useDAOTreasuryStore } from '../stores';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 
 export const TreasuryScreen: React.FC = () => {
   const { address } = useWalletStore();
@@ -165,7 +165,7 @@ export const TreasuryScreen: React.FC = () => {
             {(treasuryBalance / 1_000_000).toFixed(4)} ALGO
           </Text>
           <Text style={styles.contractId}>
-            App ID: {ALGORAND_CONFIG.contracts.daoTreasury}
+            App ID: {AlgorandConfig.contracts.daoTreasury}
           </Text>
         </Card>
 

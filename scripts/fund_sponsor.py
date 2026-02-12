@@ -43,7 +43,7 @@ def create_or_load_sponsor() -> tuple[str, str]:
         private_key, address = account.generate_account()
         new_mnemonic = mnemonic.from_private_key(private_key)
         print(f"Created new sponsor wallet: {address}")
-        print(f"\n⚠️  SAVE THIS MNEMONIC (add to .env as SPONSOR_MNEMONIC):")
+        print(f"\n  SAVE THIS MNEMONIC (add to .env as SPONSOR_MNEMONIC):")
         print(f"   {new_mnemonic}\n")
     
     return private_key, address

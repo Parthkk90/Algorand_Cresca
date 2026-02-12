@@ -1,0 +1,132 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l14
+txn OnCompletion
+int OptIn
+==
+bnz main_l13
+txn OnCompletion
+int CloseOut
+==
+bnz main_l10
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l9
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "add_signer"
+==
+&&
+bnz main_l8
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "create_proposal"
+==
+&&
+bnz main_l7
+err
+main_l7:
+txn Sender
+byte "is_signer"
+app_local_get
+int 1
+==
+assert
+byte "proposal_count"
+byte "proposal_count"
+app_global_get
+int 1
++
+app_global_put
+int 1
+return
+main_l8:
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "signer_count"
+app_global_get
+int 10
+<
+assert
+txna Accounts 1
+byte "is_signer"
+int 1
+app_local_put
+byte "signer_count"
+byte "signer_count"
+app_global_get
+int 1
++
+app_global_put
+int 1
+return
+main_l9:
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+global CurrentApplicationAddress
+balance
+global CurrentApplicationAddress
+min_balance
+<=
+assert
+int 1
+return
+main_l10:
+txn Sender
+byte "is_signer"
+app_local_get
+int 1
+==
+bnz main_l12
+main_l11:
+int 1
+return
+main_l12:
+byte "signer_count"
+byte "signer_count"
+app_global_get
+int 1
+-
+app_global_put
+b main_l11
+main_l13:
+txn Sender
+byte "is_signer"
+int 0
+app_local_put
+int 1
+return
+main_l14:
+txna ApplicationArgs 0
+btoi
+int 0
+>
+assert
+byte "creator"
+txn Sender
+app_global_put
+byte "threshold"
+txna ApplicationArgs 0
+btoi
+app_global_put
+byte "signer_count"
+int 0
+app_global_put
+byte "proposal_count"
+int 0
+app_global_put
+int 1
+return

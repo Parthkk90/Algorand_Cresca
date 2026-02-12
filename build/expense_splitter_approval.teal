@@ -1,0 +1,238 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l17
+txn OnCompletion
+int OptIn
+==
+bnz main_l16
+txn OnCompletion
+int CloseOut
+==
+bnz main_l15
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l14
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "add_expense"
+==
+&&
+bnz main_l8
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "mark_settled"
+==
+&&
+bnz main_l7
+err
+main_l7:
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "is_settled"
+app_global_get
+int 0
+==
+assert
+byte "is_settled"
+int 1
+app_global_put
+int 1
+return
+main_l8:
+byte "is_settled"
+app_global_get
+int 0
+==
+assert
+txn Sender
+byte "has_opted_in"
+app_local_get
+int 1
+==
+assert
+txna ApplicationArgs 1
+btoi
+int 0
+>
+assert
+byte "member_count"
+app_global_get
+int 0
+>
+assert
+txn Sender
+byte "balance_sign"
+app_local_get
+int 0
+==
+bnz main_l13
+txna ApplicationArgs 1
+btoi
+byte "member_count"
+app_global_get
+/
+byte "member_count"
+app_global_get
+int 1
+-
+*
+txn Sender
+byte "net_balance"
+app_local_get
+>=
+bnz main_l12
+txn Sender
+byte "net_balance"
+txn Sender
+byte "net_balance"
+app_local_get
+txna ApplicationArgs 1
+btoi
+byte "member_count"
+app_global_get
+/
+byte "member_count"
+app_global_get
+int 1
+-
+*
+-
+app_local_put
+main_l11:
+byte "total_pool"
+byte "total_pool"
+app_global_get
+txna ApplicationArgs 1
+btoi
++
+app_global_put
+byte "expense_count"
+byte "expense_count"
+app_global_get
+int 1
++
+app_global_put
+int 1
+return
+main_l12:
+txn Sender
+byte "net_balance"
+txna ApplicationArgs 1
+btoi
+byte "member_count"
+app_global_get
+/
+byte "member_count"
+app_global_get
+int 1
+-
+*
+txn Sender
+byte "net_balance"
+app_local_get
+-
+app_local_put
+txn Sender
+byte "balance_sign"
+int 0
+app_local_put
+b main_l11
+main_l13:
+txn Sender
+byte "net_balance"
+txn Sender
+byte "net_balance"
+app_local_get
+txna ApplicationArgs 1
+btoi
+byte "member_count"
+app_global_get
+/
+byte "member_count"
+app_global_get
+int 1
+-
+*
++
+app_local_put
+b main_l11
+main_l14:
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "is_settled"
+app_global_get
+int 1
+==
+assert
+int 1
+return
+main_l15:
+byte "is_settled"
+app_global_get
+int 1
+==
+assert
+int 1
+return
+main_l16:
+byte "is_settled"
+app_global_get
+int 0
+==
+assert
+byte "member_count"
+app_global_get
+int 16
+<
+assert
+txn Sender
+byte "net_balance"
+int 0
+app_local_put
+txn Sender
+byte "balance_sign"
+int 0
+app_local_put
+txn Sender
+byte "has_opted_in"
+int 1
+app_local_put
+byte "member_count"
+byte "member_count"
+app_global_get
+int 1
++
+app_global_put
+int 1
+return
+main_l17:
+byte "creator"
+txn Sender
+app_global_put
+byte "member_count"
+int 0
+app_global_put
+byte "expense_count"
+int 0
+app_global_put
+byte "is_settled"
+int 0
+app_global_put
+byte "total_pool"
+int 0
+app_global_put
+int 1
+return

@@ -1,0 +1,60 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l8
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l7
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "create_event"
+==
+&&
+bnz main_l6
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "verify_ticket"
+==
+&&
+bnz main_l5
+err
+main_l5:
+byte "Ticket verified"
+log
+int 1
+return
+main_l6:
+byte "event_count"
+byte "event_count"
+app_global_get
+int 1
++
+app_global_put
+byte "Event created: "
+byte "event_count"
+app_global_get
+itob
+concat
+log
+int 1
+return
+main_l7:
+byte "event_count"
+app_global_get
+int 0
+==
+assert
+int 1
+return
+main_l8:
+byte "event_count"
+int 0
+app_global_put
+int 1
+return

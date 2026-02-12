@@ -1,0 +1,55 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l8
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l7
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "create_campaign"
+==
+&&
+bnz main_l6
+txn OnCompletion
+int NoOp
+==
+txna ApplicationArgs 0
+byte "donate"
+==
+&&
+bnz main_l5
+err
+main_l5:
+byte "Donation received"
+log
+int 1
+return
+main_l6:
+byte "campaign_count"
+byte "campaign_count"
+app_global_get
+int 1
++
+app_global_put
+byte "Campaign created: "
+byte "campaign_count"
+app_global_get
+itob
+concat
+log
+int 1
+return
+main_l7:
+int 1
+return
+main_l8:
+byte "campaign_count"
+int 0
+app_global_put
+int 1
+return

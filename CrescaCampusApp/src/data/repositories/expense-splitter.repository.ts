@@ -7,7 +7,7 @@
 import algosdk from 'algosdk';
 import { algorandClientService } from '../../core/services/algorand-client.service';
 import { walletService } from '../../core/services/wallet.service';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 import { ExpenseSplit, ExpenseMember, TransactionResult } from '../../domain/models';
 
 class ExpenseSplitterRepository {
@@ -15,7 +15,7 @@ class ExpenseSplitterRepository {
   private readonly client: algosdk.Algodv2;
 
   constructor() {
-    this.appId = ALGORAND_CONFIG.contracts.expenseSplitter;
+    this.appId = AlgorandConfig.contracts.expenseSplitter;
     this.client = algorandClientService.getAlgodClient();
   }
 
@@ -30,14 +30,15 @@ class ExpenseSplitterRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
-    const optInTxn = algosdk.makeApplicationOptInTxn(
-      wallet.address,
+    const optInTxn = algosdk.makeApplicationOptInTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId
-    );
+      appIndex: this.appId
+    });
 
-    const signedTxn = await walletService.signTransaction(optInTxn);
+    const signedTxn = walletService.signTransaction(optInTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -60,6 +61,7 @@ class ExpenseSplitterRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     // Build application call with arguments
     const appArgs = [
@@ -68,14 +70,15 @@ class ExpenseSplitterRepository {
       new TextEncoder().encode(description.slice(0, 32)), // Max 32 chars for description
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -97,19 +100,21 @@ class ExpenseSplitterRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('mark_settled'),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -131,11 +136,11 @@ class ExpenseSplitterRepository {
 
       return {
         appId: this.appId,
-        creator: globalState['creator'] || '',
-        memberCount: Number(globalState['member_count'] || 0),
-        expenseCount: Number(globalState['expense_count'] || 0),
-        isSettled: Boolean(globalState['is_settled']),
-        totalPool: Number(globalState['total_pool'] || 0),
+        creator: globalState.get('creator')?.toString() || '',
+        memberCount: Number(globalState.get('member_count') || 0),
+        expenseCount: Number(globalState.get('expense_count') || 0),
+        isSettled: Boolean(globalState.get('is_settled')),
+        totalPool: Number(globalState.get('total_pool') || 0),
       };
     } catch (error) {
       console.error('Failed to get expense split state:', error);
@@ -151,7 +156,7 @@ class ExpenseSplitterRepository {
     try {
       const localState = await algorandClientService.getAppLocalState(this.appId, address);
       
-      if (!localState) {
+      if (!localState || localState.size === 0) {
         return {
           address,
           netBalance: 0,
@@ -160,12 +165,13 @@ class ExpenseSplitterRepository {
         };
       }
 
-      const netBalance = Number(localState['net_balance'] || 0);
+      const netBalance = Number(localState.get('net_balance') || 0);
+      const balanceSign = Number(localState.get('balance_sign') || 0);
       
       return {
         address,
-        netBalance,
-        isOwed: netBalance > 0,
+        netBalance: balanceSign === 1 ? -netBalance : netBalance,
+        isOwed: balanceSign === 0 && netBalance > 0,
         hasOptedIn: true,
       };
     } catch {
@@ -183,22 +189,14 @@ class ExpenseSplitterRepository {
    * @param address The address to check
    */
   async hasOptedIn(address: string): Promise<boolean> {
-    const accountInfo = await algorandClientService.getAccountInfo(address);
-    
-    if (!accountInfo || !accountInfo['apps-local-state']) {
-      return false;
-    }
-
-    return accountInfo['apps-local-state'].some(
-      (app: any) => app.id === this.appId
-    );
+    return algorandClientService.isOptedIntoApp(address, this.appId);
   }
 
   /**
    * Get the application address (escrow)
    */
   getAppAddress(): string {
-    return algosdk.getApplicationAddress(this.appId);
+    return algosdk.getApplicationAddress(this.appId).toString();
   }
 
   /**

@@ -7,7 +7,7 @@
 import algosdk from 'algosdk';
 import { algorandClientService } from '../../core/services/algorand-client.service';
 import { walletService } from '../../core/services/wallet.service';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 import { DAOTreasury, TreasuryProposal, ProposalStatus, TransactionResult } from '../../domain/models';
 
 class DAOTreasuryRepository {
@@ -15,7 +15,7 @@ class DAOTreasuryRepository {
   private readonly client: algosdk.Algodv2;
 
   constructor() {
-    this.appId = ALGORAND_CONFIG.contracts.daoTreasury;
+    this.appId = AlgorandConfig.contracts.daoTreasury;
     this.client = algorandClientService.getAlgodClient();
   }
 
@@ -30,14 +30,15 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
-    const optInTxn = algosdk.makeApplicationOptInTxn(
-      wallet.address,
+    const optInTxn = algosdk.makeApplicationOptInTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId
-    );
+      appIndex: this.appId
+    });
 
-    const signedTxn = await walletService.signTransaction(optInTxn);
+    const signedTxn = walletService.signTransaction(optInTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -60,20 +61,22 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('add_signer'),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
+      appIndex: this.appId,
       appArgs,
-      [signerAddress] // Add signer address as account reference
-    );
+      accounts: [signerAddress],
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -101,6 +104,7 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('create_proposal'),
@@ -109,15 +113,16 @@ class DAOTreasuryRepository {
       new TextEncoder().encode(description.slice(0, 32)),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
+      appIndex: this.appId,
       appArgs,
-      [recipient]
-    );
+      accounts: [recipient],
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -139,20 +144,22 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('approve_proposal'),
       algosdk.encodeUint64(proposalId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -174,20 +181,22 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('execute_proposal'),
       algosdk.encodeUint64(proposalId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -209,17 +218,18 @@ class DAOTreasuryRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     const appAddress = this.getAppAddress();
 
     // Create payment transaction to app address
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: wallet.address,
-      to: appAddress,
+      sender: wallet.address,
+      receiver: appAddress,
       amount: amount,
       suggestedParams,
     });
 
-    const signedTxn = await walletService.signTransaction(paymentTxn);
+    const signedTxn = walletService.signTransaction(paymentTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -244,10 +254,10 @@ class DAOTreasuryRepository {
 
       return {
         appId: this.appId,
-        creator: globalState['creator'] || '',
-        threshold: Number(globalState['threshold'] || 2),
-        signerCount: Number(globalState['signer_count'] || 0),
-        proposalCount: Number(globalState['proposal_count'] || 0),
+        creator: globalState.get('creator')?.toString() || '',
+        threshold: Number(globalState.get('threshold') || 2),
+        signerCount: Number(globalState.get('signer_count') || 0),
+        proposalCount: Number(globalState.get('proposal_count') || 0),
         balance,
       };
     } catch (error) {
@@ -263,7 +273,7 @@ class DAOTreasuryRepository {
   async isSigner(address: string): Promise<boolean> {
     try {
       const localState = await algorandClientService.getAppLocalState(this.appId, address);
-      return localState?.['is_signer'] === 1;
+      return localState?.get('is_signer') === 1;
     } catch {
       return false;
     }
@@ -302,7 +312,7 @@ class DAOTreasuryRepository {
    * Get the application address (treasury escrow)
    */
   getAppAddress(): string {
-    return algosdk.getApplicationAddress(this.appId);
+    return algosdk.getApplicationAddress(this.appId).toString();
   }
 
   /**
@@ -318,15 +328,7 @@ class DAOTreasuryRepository {
    * @param address The address to check
    */
   async hasOptedIn(address: string): Promise<boolean> {
-    const accountInfo = await algorandClientService.getAccountInfo(address);
-    
-    if (!accountInfo || !accountInfo['apps-local-state']) {
-      return false;
-    }
-
-    return accountInfo['apps-local-state'].some(
-      (app: any) => app.id === this.appId
-    );
+    return algorandClientService.isOptedIntoApp(address, this.appId);
   }
 }
 

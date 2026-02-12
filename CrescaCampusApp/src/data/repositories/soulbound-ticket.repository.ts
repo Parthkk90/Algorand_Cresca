@@ -9,7 +9,7 @@
 import algosdk from 'algosdk';
 import { algorandClientService } from '../../core/services/algorand-client.service';
 import { walletService } from '../../core/services/wallet.service';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
+import { AlgorandConfig } from '../../core/config/algorand.config';
 import { Event, Ticket, TransactionResult } from '../../domain/models';
 
 class SoulboundTicketRepository {
@@ -17,7 +17,7 @@ class SoulboundTicketRepository {
   private readonly client: algosdk.Algodv2;
 
   constructor() {
-    this.appId = ALGORAND_CONFIG.contracts.soulboundTicket;
+    this.appId = AlgorandConfig.contracts.soulboundTicket;
     this.client = algorandClientService.getAlgodClient();
   }
 
@@ -32,14 +32,15 @@ class SoulboundTicketRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
-    const optInTxn = algosdk.makeApplicationOptInTxn(
-      wallet.address,
+    const optInTxn = algosdk.makeApplicationOptInTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId
-    );
+      appIndex: this.appId
+    });
 
-    const signedTxn = await walletService.signTransaction(optInTxn);
+    const signedTxn = walletService.signTransaction(optInTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -71,6 +72,7 @@ class SoulboundTicketRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('create_event'),
@@ -81,14 +83,15 @@ class SoulboundTicketRepository {
       new TextEncoder().encode(venue.slice(0, 32)),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -116,12 +119,13 @@ class SoulboundTicketRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     const appAddress = this.getAppAddress();
 
     // Create atomic transaction group: payment + app call
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: wallet.address,
-      to: appAddress,
+      sender: wallet.address,
+      receiver: appAddress,
       amount: event.price,
       suggestedParams,
     });
@@ -131,19 +135,20 @@ class SoulboundTicketRepository {
       algosdk.encodeUint64(eventId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
     // Group transactions
     algosdk.assignGroupID([paymentTxn, appCallTxn]);
 
     // Sign both transactions
-    const signedPayment = await walletService.signTransaction(paymentTxn);
-    const signedAppCall = await walletService.signTransaction(appCallTxn);
+    const signedPayment = walletService.signTransaction(paymentTxn, secretKey);
+    const signedAppCall = walletService.signTransaction(appCallTxn, secretKey);
 
     // Send as atomic group
     const txId = await algorandClientService.sendTransaction([signedPayment, signedAppCall]);
@@ -167,20 +172,22 @@ class SoulboundTicketRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('check_in'),
       algosdk.encodeUint64(eventId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -207,7 +214,7 @@ class SoulboundTicketRepository {
 
       // Check if the user has a ticket for this event
       const ticketKey = `ticket_${eventId}`;
-      return localState[ticketKey] !== undefined;
+      return localState.has(ticketKey);
     } catch {
       return false;
     }
@@ -225,20 +232,20 @@ class SoulboundTicketRepository {
 
       // Parse event data from global state
       // Events are stored with keys like event_0_name, event_0_price, etc.
-      const eventName = globalState[`event_${eventId}_name`];
+      const eventName = globalState.get(`event_${eventId}_name`);
       
       if (!eventName) return null;
 
       return {
         id: eventId,
-        assetId: Number(globalState[`event_${eventId}_asset`] || 0),
+        assetId: Number(globalState.get(`event_${eventId}_asset`) || 0),
         name: String(eventName),
-        price: Number(globalState[`event_${eventId}_price`] || 0),
-        maxTickets: Number(globalState[`event_${eventId}_max`] || 0),
-        soldTickets: Number(globalState[`event_${eventId}_sold`] || 0),
-        eventDate: Number(globalState[`event_${eventId}_date`] || 0),
-        venue: String(globalState[`event_${eventId}_venue`] || ''),
-        creator: String(globalState['creator'] || ''),
+        price: Number(globalState.get(`event_${eventId}_price`) || 0),
+        maxTickets: Number(globalState.get(`event_${eventId}_max`) || 0),
+        soldTickets: Number(globalState.get(`event_${eventId}_sold`) || 0),
+        eventDate: Number(globalState.get(`event_${eventId}_date`) || 0),
+        venue: String(globalState.get(`event_${eventId}_venue`) || ''),
+        creator: String(globalState.get('creator') || ''),
       };
     } catch (error) {
       console.error('Failed to get event:', error);
@@ -256,8 +263,8 @@ class SoulboundTicketRepository {
       if (!globalState) return null;
 
       return {
-        eventCount: Number(globalState['event_count'] || 0),
-        creator: String(globalState['creator'] || ''),
+        eventCount: Number(globalState.get('event_count') || 0),
+        creator: String(globalState.get('creator') || ''),
       };
     } catch (error) {
       console.error('Failed to get contract state:', error);
@@ -278,17 +285,17 @@ class SoulboundTicketRepository {
       const tickets: Ticket[] = [];
       
       // Parse ticket data from local state
-      for (const key of Object.keys(localState)) {
+      for (const [key, _value] of localState) {
         if (key.startsWith('ticket_')) {
           const eventId = parseInt(key.split('_')[1]);
           tickets.push({
             assetId: 0, // ASA ID if using ASA-based tickets
             eventId,
             holder: address,
-            purchaseDate: Number(localState[`${key}_date`] || Date.now() / 1000),
-            checkedIn: Boolean(localState[`${key}_checked_in`]),
-            checkInTime: localState[`${key}_checkin_time`] 
-              ? Number(localState[`${key}_checkin_time`]) 
+            purchaseDate: Number(localState.get(`${key}_date`) || Date.now() / 1000),
+            checkedIn: Boolean(localState.get(`${key}_checked_in`)),
+            checkInTime: localState.get(`${key}_checkin_time`) 
+              ? Number(localState.get(`${key}_checkin_time`)) 
               : undefined,
           });
         }
@@ -305,7 +312,7 @@ class SoulboundTicketRepository {
    * Get the application address
    */
   getAppAddress(): string {
-    return algosdk.getApplicationAddress(this.appId);
+    return algosdk.getApplicationAddress(this.appId).toString();
   }
 
   /**
@@ -313,15 +320,7 @@ class SoulboundTicketRepository {
    * @param address The address to check
    */
   async hasOptedIn(address: string): Promise<boolean> {
-    const accountInfo = await algorandClientService.getAccountInfo(address);
-    
-    if (!accountInfo || !accountInfo['apps-local-state']) {
-      return false;
-    }
-
-    return accountInfo['apps-local-state'].some(
-      (app: any) => app.id === this.appId
-    );
+    return algorandClientService.isOptedIntoApp(address, this.appId);
   }
 }
 

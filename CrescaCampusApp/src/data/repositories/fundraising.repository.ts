@@ -7,15 +7,15 @@
 import algosdk from 'algosdk';
 import { algorandClientService } from '../../core/services/algorand-client.service';
 import { walletService } from '../../core/services/wallet.service';
-import { ALGORAND_CONFIG } from '../../core/config/algorand.config';
-import { Campaign, CampaignStatus, Milestone, Donation, TransactionResult } from '../../domain/models';
+import { AlgorandConfig } from '../../core/config/algorand.config';
+import { Campaign, CampaignStatus, Donation, TransactionResult } from '../../domain/models';
 
 class FundraisingRepository {
   private readonly appId: number;
   private readonly client: algosdk.Algodv2;
 
   constructor() {
-    this.appId = ALGORAND_CONFIG.contracts.fundraising;
+    this.appId = AlgorandConfig.contracts.fundraising;
     this.client = algorandClientService.getAlgodClient();
   }
 
@@ -30,14 +30,15 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
-    const optInTxn = algosdk.makeApplicationOptInTxn(
-      wallet.address,
+    const optInTxn = algosdk.makeApplicationOptInTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId
-    );
+      appIndex: this.appId
+    });
 
-    const signedTxn = await walletService.signTransaction(optInTxn);
+    const signedTxn = walletService.signTransaction(optInTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -69,6 +70,7 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     // Calculate deadline as Unix timestamp
     const deadline = Math.floor(Date.now() / 1000) + (deadlineDays * 24 * 60 * 60);
@@ -82,15 +84,16 @@ class FundraisingRepository {
       algosdk.encodeUint64(deadline),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
+      appIndex: this.appId,
       appArgs,
-      [beneficiary]
-    );
+      accounts: [beneficiary],
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -118,12 +121,13 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     const appAddress = this.getAppAddress();
 
     // Create atomic group: payment + app call
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: wallet.address,
-      to: appAddress,
+      sender: wallet.address,
+      receiver: appAddress,
       amount: amount,
       suggestedParams,
     });
@@ -134,19 +138,20 @@ class FundraisingRepository {
       new Uint8Array([isAnonymous ? 1 : 0]),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
     // Group transactions
     algosdk.assignGroupID([paymentTxn, appCallTxn]);
 
     // Sign both
-    const signedPayment = await walletService.signTransaction(paymentTxn);
-    const signedAppCall = await walletService.signTransaction(appCallTxn);
+    const signedPayment = walletService.signTransaction(paymentTxn, secretKey);
+    const signedAppCall = walletService.signTransaction(appCallTxn, secretKey);
 
     // Send atomic group
     const txId = await algorandClientService.sendTransaction([signedPayment, signedAppCall]);
@@ -171,20 +176,22 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('claim_funds'),
       algosdk.encodeUint64(campaignId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -207,20 +214,22 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('refund'),
       algosdk.encodeUint64(campaignId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -242,20 +251,22 @@ class FundraisingRepository {
     }
 
     const suggestedParams = await this.client.getTransactionParams().do();
+    const secretKey = walletService.getSecretKeyFromMnemonic(wallet.mnemonic);
     
     const appArgs = [
       new TextEncoder().encode('cancel_campaign'),
       algosdk.encodeUint64(campaignId),
     ];
 
-    const appCallTxn = algosdk.makeApplicationNoOpTxn(
-      wallet.address,
+    const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+      sender: wallet.address,
       suggestedParams,
-      this.appId,
-      appArgs
-    );
+      appIndex: this.appId,
+      appArgs,
+      onComplete: algosdk.OnApplicationComplete.NoOpOC
+    });
 
-    const signedTxn = await walletService.signTransaction(appCallTxn);
+    const signedTxn = walletService.signTransaction(appCallTxn, secretKey);
     const txId = await algorandClientService.sendTransaction(signedTxn);
     const confirmed = await algorandClientService.waitForConfirmation(txId);
 
@@ -279,15 +290,15 @@ class FundraisingRepository {
       // Parse campaign data from global state
       const campaignKey = `campaign_${campaignId}`;
       
-      if (!globalState[`${campaignKey}_title`]) return null;
+      if (!globalState.get(`${campaignKey}_title`)) return null;
 
-      const deadline = Number(globalState[`${campaignKey}_deadline`] || 0);
-      const goal = Number(globalState[`${campaignKey}_goal`] || 0);
-      const raised = Number(globalState[`${campaignKey}_raised`] || 0);
+      const deadline = Number(globalState.get(`${campaignKey}_deadline`) || 0);
+      const goal = Number(globalState.get(`${campaignKey}_goal`) || 0);
+      const raised = Number(globalState.get(`${campaignKey}_raised`) || 0);
       const now = Math.floor(Date.now() / 1000);
 
       let status: CampaignStatus;
-      if (globalState[`${campaignKey}_cancelled`]) {
+      if (globalState.get(`${campaignKey}_cancelled`)) {
         status = CampaignStatus.CANCELLED;
       } else if (raised >= goal) {
         status = CampaignStatus.SUCCESSFUL;
@@ -299,16 +310,16 @@ class FundraisingRepository {
 
       return {
         id: campaignId,
-        creator: String(globalState[`${campaignKey}_creator`] || ''),
-        beneficiary: String(globalState[`${campaignKey}_beneficiary`] || ''),
-        title: String(globalState[`${campaignKey}_title`] || ''),
-        description: String(globalState[`${campaignKey}_description`] || ''),
+        creator: String(globalState.get(`${campaignKey}_creator`) || ''),
+        beneficiary: String(globalState.get(`${campaignKey}_beneficiary`) || ''),
+        title: String(globalState.get(`${campaignKey}_title`) || ''),
+        description: String(globalState.get(`${campaignKey}_description`) || ''),
         goal,
         raised,
         deadline,
         status,
-        milestoneCount: Number(globalState[`${campaignKey}_milestones`] || 0),
-        donationCount: Number(globalState[`${campaignKey}_donations`] || 0),
+        milestoneCount: Number(globalState.get(`${campaignKey}_milestones`) || 0),
+        donationCount: Number(globalState.get(`${campaignKey}_donations`) || 0),
       };
     } catch (error) {
       console.error('Failed to get campaign:', error);
@@ -325,7 +336,7 @@ class FundraisingRepository {
       
       if (!globalState) return [];
 
-      const campaignCount = Number(globalState['campaign_count'] || 0);
+      const campaignCount = Number(globalState.get('campaign_count') || 0);
       const campaigns: Campaign[] = [];
 
       for (let i = 0; i < campaignCount; i++) {
@@ -355,7 +366,7 @@ class FundraisingRepository {
       const donations: Donation[] = [];
 
       // Parse donations from local state
-      for (const key of Object.keys(localState)) {
+      for (const [key, _value] of localState) {
         if (key.startsWith('donation_')) {
           const parts = key.split('_');
           const campaignId = parseInt(parts[1]);
@@ -365,9 +376,9 @@ class FundraisingRepository {
             id: donationId,
             campaignId,
             donor: address,
-            amount: Number(localState[key] || 0),
-            timestamp: Number(localState[`${key}_time`] || 0),
-            isAnonymous: Boolean(localState[`${key}_anon`]),
+            amount: Number(localState.get(key) || 0),
+            timestamp: Number(localState.get(`${key}_time`) || 0),
+            isAnonymous: Boolean(localState.get(`${key}_anon`)),
           });
         }
       }
@@ -393,9 +404,9 @@ class FundraisingRepository {
       if (!globalState) return null;
 
       return {
-        totalCampaigns: Number(globalState['campaign_count'] || 0),
-        totalRaised: Number(globalState['total_raised'] || 0),
-        successfulCampaigns: Number(globalState['successful_count'] || 0),
+        totalCampaigns: Number(globalState.get('campaign_count') || 0),
+        totalRaised: Number(globalState.get('total_raised') || 0),
+        successfulCampaigns: Number(globalState.get('successful_count') || 0),
       };
     } catch (error) {
       console.error('Failed to get contract stats:', error);
@@ -407,7 +418,7 @@ class FundraisingRepository {
    * Get the application address (escrow)
    */
   getAppAddress(): string {
-    return algosdk.getApplicationAddress(this.appId);
+    return algosdk.getApplicationAddress(this.appId).toString();
   }
 
   /**
@@ -423,15 +434,7 @@ class FundraisingRepository {
    * @param address The address to check
    */
   async hasOptedIn(address: string): Promise<boolean> {
-    const accountInfo = await algorandClientService.getAccountInfo(address);
-    
-    if (!accountInfo || !accountInfo['apps-local-state']) {
-      return false;
-    }
-
-    return accountInfo['apps-local-state'].some(
-      (app: any) => app.id === this.appId
-    );
+    return algorandClientService.isOptedIntoApp(address, this.appId);
   }
 }
 

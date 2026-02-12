@@ -4,7 +4,14 @@
  */
 
 import algosdk from 'algosdk';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Simple in-memory storage for development (replace with AsyncStorage in production)
+const storage: Map<string, string> = new Map();
+const AsyncStorage = {
+  getItem: async (key: string): Promise<string | null> => storage.get(key) || null,
+  setItem: async (key: string, value: string): Promise<void> => { storage.set(key, value); },
+  removeItem: async (key: string): Promise<void> => { storage.delete(key); },
+};
 
 const WALLET_STORAGE_KEY = '@cresca_wallet';
 
@@ -30,26 +37,21 @@ class WalletService {
   /**
    * Generate a new Algorand account
    */
-  public generateAccount(): { address: string; mnemonic: string; secretKey: Uint8Array } {
+  public generateAccount(): { account: algosdk.Account; mnemonic: string } {
     const account = algosdk.generateAccount();
     const mnemonic = algosdk.secretKeyToMnemonic(account.sk);
     
     return {
-      address: account.addr,
+      account,
       mnemonic,
-      secretKey: account.sk,
     };
   }
 
   /**
    * Recover account from mnemonic
    */
-  public recoverFromMnemonic(mnemonic: string): { address: string; secretKey: Uint8Array } {
-    const secretKey = algosdk.mnemonicToSecretKey(mnemonic);
-    return {
-      address: secretKey.addr,
-      secretKey: secretKey.sk,
-    };
+  public recoverFromMnemonic(mnemonic: string): algosdk.Account {
+    return algosdk.mnemonicToSecretKey(mnemonic);
   }
 
   /**
@@ -80,7 +82,12 @@ class WalletService {
   /**
    * Save wallet to secure storage
    */
-  public async saveWallet(account: WalletAccount): Promise<void> {
+  public async saveWallet(address: string, mnemonic: string): Promise<void> {
+    const account: WalletAccount = {
+      address,
+      mnemonic,
+      createdAt: new Date().toISOString(),
+    };
     await AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(account));
     this.currentAccount = account;
   }
@@ -113,9 +120,9 @@ class WalletService {
   }
 
   /**
-   * Delete wallet from storage
+   * Delete/clear wallet from storage
    */
-  public async deleteWallet(): Promise<void> {
+  public async clearWallet(): Promise<void> {
     await AsyncStorage.removeItem(WALLET_STORAGE_KEY);
     this.currentAccount = null;
   }
@@ -123,33 +130,39 @@ class WalletService {
   /**
    * Create and save a new wallet
    */
-  public async createAndSaveWallet(): Promise<WalletAccount> {
-    const { address, mnemonic } = this.generateAccount();
+  public async createAndSaveWallet(): Promise<{ account: WalletAccount; mnemonic: string }> {
+    const { account, mnemonic } = this.generateAccount();
+    const address = account.addr.toString();
     
-    const account: WalletAccount = {
+    const walletAccount: WalletAccount = {
       address,
       mnemonic,
       createdAt: new Date().toISOString(),
     };
 
-    await this.saveWallet(account);
-    return account;
+    await AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(walletAccount));
+    this.currentAccount = walletAccount;
+    
+    return { account: walletAccount, mnemonic };
   }
 
   /**
    * Import wallet from mnemonic and save
    */
   public async importWallet(mnemonic: string): Promise<WalletAccount> {
-    const { address } = this.recoverFromMnemonic(mnemonic);
+    const account = this.recoverFromMnemonic(mnemonic);
+    const address = account.addr.toString();
     
-    const account: WalletAccount = {
+    const walletAccount: WalletAccount = {
       address,
       mnemonic,
       createdAt: new Date().toISOString(),
     };
 
-    await this.saveWallet(account);
-    return account;
+    await AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(walletAccount));
+    this.currentAccount = walletAccount;
+    
+    return walletAccount;
   }
 }
 

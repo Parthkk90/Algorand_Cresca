@@ -20,7 +20,7 @@
 - [Project Structure](#project-structure)
 - [Smart Contracts](#smart-contracts)
 - [Getting Started](#getting-started)
-- [Development Roadmap](#development-roadmap)
+- [Application Flow](#application-flow)
 - [Demo Flow](#demo-flow)
 - [Contributing](#contributing)
 - [License](#license)
@@ -326,49 +326,88 @@ SPONSOR_MNEMONIC="your 25 word mnemonic here"
 
 ---
 
-## Development Roadmap
+## Application Flow
 
-### Phase 1: Foundation (Days 1-2) ✅
-- [x] Project scaffolding with AlgoKit 3.x
-- [x] README and documentation
-- [ ] Base contract templates
-- [ ] Local development environment
+### User Journey
 
-### Phase 2: Core Contracts (Days 3-5)
-- [ ] **Expense Splitter** — Create, add expenses, atomic settle
-- [ ] **DAO Treasury** — Multi-sig with proposal system
-- [ ] Contract unit tests with AlgoKit testing
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           NEW USER ONBOARDING                                │
+│  ┌─────────┐    ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐  │
+│  │ Scan QR │ -> │ Create      │ -> │ Fee Sponsor  │ -> │ Ready to        │  │
+│  │ Code    │    │ Passkey     │    │ First Txn    │    │ Transact!       │  │
+│  └─────────┘    └─────────────┘    └──────────────┘    └─────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────┘
 
-### Phase 3: Soulbound Tickets (Days 6-7)
-- [ ] **ARC-71 implementation** — Freeze/clawback mechanics
-- [ ] **ARC-69 metadata** — Event details on-chain
-- [ ] Minting and verification flows
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          EXPENSE SPLITTING FLOW                              │
+│                                                                              │
+│  User A creates split  ->  Add members (B, C, D)  ->  Members join group    │
+│         ↓                                                                    │
+│  Add expenses with payer info  ->  System calculates balances               │
+│         ↓                                                                    │
+│  "Settle All" triggers atomic group  ->  All debts cleared in 1 block       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 
-### Phase 4: Fundraising Escrow (Days 8-9)
-- [ ] **Escrow contract** — Milestone-based release
-- [ ] **Inner transactions** — Automated fund distribution
-- [ ] Anonymous donor mode (note encryption)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          DAO TREASURY FLOW                                   │
+│                                                                              │
+│  Initialize M-of-N treasury  ->  Add authorized signers                     │
+│         ↓                                                                    │
+│  Member creates spending proposal  ->  Proposal visible to all signers      │
+│         ↓                                                                    │
+│  Signers approve on-chain  ->  Threshold reached  ->  Funds released        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 
-### Phase 5: Frontend (Days 10-14)
-- [ ] Next.js project setup
-- [ ] Wallet connection (Pera + Liquid Auth)
-- [ ] Payment & QR components
-- [ ] Split management UI
-- [ ] Treasury dashboard
-- [ ] Ticket minting & verification
-- [ ] Fundraising campaign pages
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         SOULBOUND TICKET FLOW                                │
+│                                                                              │
+│  Event organizer creates event  ->  Set max tickets & price                 │
+│         ↓                                                                    │
+│  Student purchases ticket  ->  ARC-71 NFT minted (frozen to wallet)         │
+│         ↓                                                                    │
+│  At event gate: QR scan  ->  On-chain verification  ->  Entry granted       │
+│         ↓                                                                    │
+│  Transfer attempt  ->  BLOCKED (protocol-level freeze)  ->  No scalping!    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 
-### Phase 6: Integration & Polish (Days 15-17)
-- [ ] Fee pooling for onboarding
-- [ ] End-to-end testing
-- [ ] Mobile responsiveness
-- [ ] Error handling & edge cases
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         FUNDRAISING ESCROW FLOW                              │
+│                                                                              │
+│  Creator sets campaign  ->  Define goal, deadline, milestones               │
+│         ↓                                                                    │
+│  Donors contribute to escrow  ->  Funds locked in smart contract            │
+│         ↓                                                                    │
+│  IF goal met + milestone achieved  ->  Inner txn releases funds             │
+│  IF deadline passed + goal not met  ->  Auto-refund to donors               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
 
-### Phase 7: Demo Preparation (Days 18-20)
-- [ ] Demo script rehearsal
-- [ ] Testnet deployment
-- [ ] Video recording
-- [ ] Pitch deck finalization
+### Key Interactions
+
+| Action | Smart Contract | Algorand Primitive |
+|--------|---------------|-------------------|
+| Send payment | P2P Payment | `PaymentTxn` |
+| Create expense group | Expense Splitter | App Create + Box Storage |
+| Settle debts | Expense Splitter | Atomic Group (16 txns) |
+| Propose spending | DAO Treasury | App Call + Box Update |
+| Execute approved spend | DAO Treasury | Inner Transaction |
+| Mint event ticket | Soulbound Ticket | ASA Create (frozen) |
+| Verify ticket holder | Soulbound Ticket | App Call + ASA Balance Check |
+| Donate to campaign | Fundraising | App Call + Payment |
+| Release milestone funds | Fundraising | Inner Transaction |
+| Refund failed campaign | Fundraising | Inner Transaction |
+
+### Security Model
+
+- **No custody risk**: Funds never held by any individual
+- **Atomic guarantees**: Multi-party transactions succeed or fail together
+- **On-chain transparency**: All actions auditable via Algorand Indexer
+- **Protocol-level enforcement**: Soulbound tickets cannot be transferred by design
 
 ---
 

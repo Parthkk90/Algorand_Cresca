@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
-import { theme } from '../theme';
+import { theme } from '../../theme';
 
 interface LoadingProps {
   fullScreen?: boolean;

@@ -12,7 +12,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { theme } from '../theme';
+import { theme } from '../../theme';
 
 interface ButtonProps {
   title: string;

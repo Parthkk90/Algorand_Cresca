@@ -1,6 +1,6 @@
 /**
  * WalletSetupScreen
- * Create a new wallet and show mnemonic
+ * Create a new wallet and show mnemonic - Matches design mockup
  */
 
 import React, { useState } from 'react';
@@ -12,6 +12,7 @@ import {
   Alert,
   TouchableOpacity,
   Clipboard,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
@@ -87,48 +88,83 @@ export const WalletSetupScreen: React.FC = () => {
     );
   }
 
-  // Show mnemonic - after wallet creation
+  // Show mnemonic - after wallet creation (matching design)
   if (!confirmed) {
     const words = mnemonic.split(' ');
+    // Split into two columns: 1-13 left, 14-25 right
+    const leftColumn = words.slice(0, 13);
+    const rightColumn = words.slice(13);
 
     return (
-      <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Your Recovery Phrase</Text>
-          <Text style={styles.description}>
-            Write down these 25 words in order. This is the ONLY way to recover
-            your wallet.
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.mnemonicContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()} 
+              style={styles.backButton}
+            >
+              <Text style={styles.backArrow}>‹</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerLabel}>SECURITY STEP</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+
+          {/* Title */}
+          <Text style={styles.mnemonicTitle}>Your Recovery Phrase</Text>
+          <Text style={styles.mnemonicDescription}>
+            Write down these 25 words in the exact order and keep them in a safe place. Anyone with this phrase can access your funds.
           </Text>
 
-          <Card style={styles.mnemonicCard}>
-            <View style={styles.wordsGrid}>
-              {words.map((word, index) => (
-                <View key={index} style={styles.wordContainer}>
-                  <Text style={styles.wordNumber}>{index + 1}</Text>
+          {/* Two-column word grid */}
+          <View style={styles.columnsContainer}>
+            {/* Left Column (1-13) */}
+            <View style={styles.column}>
+              {leftColumn.map((word, index) => (
+                <View key={index} style={styles.wordPill}>
+                  <Text style={styles.wordNumber}>
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
                   <Text style={styles.wordText}>{word}</Text>
                 </View>
               ))}
             </View>
-          </Card>
 
+            {/* Right Column (14-25) */}
+            <View style={styles.column}>
+              {rightColumn.map((word, index) => (
+                <View key={index + 13} style={styles.wordPill}>
+                  <Text style={styles.wordNumber}>
+                    {String(index + 14).padStart(2, '0')}
+                  </Text>
+                  <Text style={styles.wordText}>{word}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Copy button */}
           <TouchableOpacity onPress={copyMnemonic} style={styles.copyButton}>
-            <Text style={styles.copyText}>📋 Tap to copy</Text>
+            <Text style={styles.copyIcon}>📋</Text>
+            <Text style={styles.copyText}>Tap to copy</Text>
           </TouchableOpacity>
 
-          <Card style={styles.warningCard}>
-            <Text style={styles.warningText}>
-              ⚠️ Never share this phrase. Anyone with these words can steal your
-              funds.
+          {/* Warning banner */}
+          <View style={styles.warningBanner}>
+            <Text style={styles.warningEmoji}>⚠️</Text>
+            <Text style={styles.warningBannerText}>
+              Do not take a screenshot. Digital copies can be compromised.
             </Text>
-          </Card>
+          </View>
 
-          <Button
-            title="I've Written It Down"
-            onPress={handleConfirm}
-            style={styles.confirmButton}
-          />
+          {/* Confirm button */}
+          <TouchableOpacity style={styles.gradientButton} onPress={handleConfirm}>
+            <View style={styles.gradientButtonInner}>
+              <Text style={styles.gradientButtonText}>I've Written It Down</Text>
+            </View>
+          </TouchableOpacity>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -193,41 +229,127 @@ const styles = StyleSheet.create({
   createButton: {
     marginBottom: theme.spacing.md,
   },
-  mnemonicCard: {
-    backgroundColor: theme.colors.surfaceLight,
-    marginBottom: theme.spacing.md,
+  
+  // Mnemonic screen styles (matching design)
+  mnemonicContent: {
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
   },
-  wordsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  wordContainer: {
-    width: '30%',
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    color: theme.colors.text,
+    fontSize: 32,
+    fontWeight: '300',
+  },
+  headerLabel: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  mnemonicTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.colors.text,
     marginBottom: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.sm,
+  },
+  mnemonicDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: theme.spacing.lg,
+  },
+  columnsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  column: {
+    width: '48%',
+  },
+  wordPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E2E',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
   },
   wordNumber: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    width: 18,
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    width: 24,
+    marginRight: 8,
   },
   wordText: {
     color: theme.colors.text,
-    fontSize: 12,
-    fontFamily: 'monospace',
+    fontSize: 14,
+    fontWeight: '500',
   },
   copyButton: {
-    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
+  },
+  copyIcon: {
+    fontSize: 16,
+    marginRight: 6,
   },
   copyText: {
     color: theme.colors.primary,
     fontSize: 14,
+    fontWeight: '500',
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 178, 0, 0.1)',
+    borderRadius: 12,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  warningEmoji: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  warningBannerText: {
+    flex: 1,
+    color: theme.colors.warning,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  gradientButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  gradientButtonInner: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 18,
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  gradientButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   confirmButton: {
     marginTop: theme.spacing.md,

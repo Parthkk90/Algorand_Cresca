@@ -1,6 +1,6 @@
 /**
  * ImportWalletScreen
- * Import an existing wallet using mnemonic
+ * Import an existing wallet using mnemonic - Matches design mockup
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,8 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
@@ -22,6 +24,8 @@ export const ImportWalletScreen: React.FC = () => {
   const { importWallet, isLoading, error } = useWalletStore();
   
   const [mnemonic, setMnemonic] = useState('');
+
+  const wordCount = mnemonic.trim() ? mnemonic.trim().split(/\s+/).length : 0;
 
   const handleImport = async () => {
     const cleanedMnemonic = mnemonic.trim().toLowerCase();
@@ -46,14 +50,27 @@ export const ImportWalletScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
+            style={styles.backButton}
+          >
+            <Text style={styles.backArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerLabel}>IMPORT</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+
         <Text style={styles.title}>Import Wallet</Text>
         <Text style={styles.description}>
           Enter your 25-word recovery phrase to restore your wallet.
         </Text>
 
-        <Card style={styles.inputCard}>
+        {/* Input Card */}
+        <View style={styles.inputCard}>
           <TextInput
             style={styles.mnemonicInput}
             placeholder="Enter your 25-word recovery phrase..."
@@ -66,34 +83,49 @@ export const ImportWalletScreen: React.FC = () => {
             autoCorrect={false}
             textAlignVertical="top"
           />
-        </Card>
+          <Text style={styles.wordCounter}>
+            {wordCount}/25 words
+          </Text>
+        </View>
 
         <Text style={styles.hint}>
           Separate each word with a space. Words are case-insensitive.
         </Text>
 
-        <Card style={styles.warningCard}>
+        {/* Warning */}
+        <View style={styles.warningBanner}>
+          <Text style={styles.warningEmoji}>⚠️</Text>
           <Text style={styles.warningText}>
-            ⚠️ Only import wallets on trusted devices. Never enter your recovery
-            phrase on websites or share it with anyone.
+            Only import wallets on trusted devices. Never enter your recovery phrase on websites or share it with anyone.
           </Text>
-        </Card>
+        </View>
 
-        <Button
-          title="Import Wallet"
+        {/* Import Button */}
+        <TouchableOpacity
+          style={[
+            styles.importButton,
+            wordCount !== 25 && styles.importButtonDisabled
+          ]}
           onPress={handleImport}
-          loading={isLoading}
-          disabled={mnemonic.trim().split(/\s+/).length !== 25}
-          style={styles.importButton}
-        />
+          disabled={wordCount !== 25 || isLoading}
+        >
+          <Text style={[
+            styles.importButtonText,
+            wordCount !== 25 && styles.importButtonTextDisabled
+          ]}>
+            {isLoading ? 'Importing...' : 'Import Wallet'}
+          </Text>
+        </TouchableOpacity>
 
-        <Button
-          title="Cancel"
+        {/* Cancel */}
+        <TouchableOpacity 
+          style={styles.cancelButton}
           onPress={() => navigation.goBack()}
-          variant="ghost"
-        />
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -105,45 +137,109 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.spacing.lg,
   },
-  title: {
-    ...theme.typography.h1,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
     color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
+    fontSize: 32,
+    fontWeight: '300',
+  },
+  headerLabel: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
   },
   description: {
-    ...theme.typography.body,
+    fontSize: 14,
     color: theme.colors.textSecondary,
-    textAlign: 'center',
+    lineHeight: 20,
     marginBottom: theme.spacing.lg,
   },
   inputCard: {
-    marginBottom: theme.spacing.md,
+    backgroundColor: '#1E1E2E',
+    borderRadius: 12,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   mnemonicInput: {
     color: theme.colors.text,
     fontSize: 16,
     minHeight: 120,
-    fontFamily: 'monospace',
+    lineHeight: 24,
+  },
+  wordCounter: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    textAlign: 'right',
+    marginTop: theme.spacing.sm,
   },
   hint: {
     color: theme.colors.textSecondary,
     fontSize: 12,
-    textAlign: 'center',
     marginBottom: theme.spacing.lg,
   },
-  warningCard: {
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: 'rgba(255, 178, 0, 0.1)',
-    borderColor: theme.colors.warning,
-    borderWidth: 1,
-    marginBottom: theme.spacing.lg,
+    borderRadius: 12,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
+  },
+  warningEmoji: {
+    fontSize: 18,
+    marginRight: 10,
   },
   warningText: {
+    flex: 1,
     color: theme.colors.warning,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 18,
   },
   importButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 18,
+    borderRadius: 16,
     marginBottom: theme.spacing.md,
+  },
+  importButtonDisabled: {
+    backgroundColor: '#2A2A3E',
+  },
+  importButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  importButtonTextDisabled: {
+    color: theme.colors.textMuted,
+  },
+  cancelButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
 });

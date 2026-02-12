@@ -26,16 +26,16 @@
 
 ## Overview
 
-**Cresca Campus** is not just another wallet adapter project — it's a **native Algorand wallet built from the ground up for campus ecosystems**. Unlike generic wallet solutions like Pera or Algo Wallet that are designed for general crypto users, Cresca Campus is purpose-built with campus-specific features deeply integrated at the protocol level.
+**Cresca Campus** is not just another wallet adapter project - it's a **native Algorand wallet built from the ground up for campus ecosystems**. Unlike generic wallet solutions like Pera or Algo Wallet that are designed for general crypto users, Cresca Campus is purpose-built with campus-specific features deeply integrated at the protocol level.
 
-**Why not just use Pera Wallet?** Because students don't need another generic crypto wallet — they need a **campus finance super-app** that understands their daily workflows: splitting dinner bills, managing club funds, buying fest tickets, and crowdfunding for causes. Cresca Campus delivers all of this with Algorand-native primitives, not bolted-on features.
+**Why not just use Pera Wallet?** Because students don't need another generic crypto wallet - they need a **campus finance super-app** that understands their daily workflows: splitting dinner bills, managing club funds, buying fest tickets, and crowdfunding for causes. Cresca Campus delivers all of this with Algorand-native primitives, not bolted-on features.
 
 ### What Makes This Different
 
-- **Native Wallet Experience** — No third-party wallet adapters, no external dependencies
-- **Campus-First Design** — Every feature solves a real student pain point
-- **Protocol-Level Security** — Soulbound tickets, atomic settlements, multi-sig treasuries
-- **Zero-Friction Onboarding** — Fee sponsorship means students start transacting immediately
+- **Native Wallet Experience** - No third-party wallet adapters, no external dependencies
+- **Campus-First Design** - Every feature solves a real student pain point
+- **Protocol-Level Security** - Soulbound tickets, atomic settlements, multi-sig treasuries
+- **Zero-Friction Onboarding** - Fee sponsorship means students start transacting immediately
 
 ### Why Algorand?
 
@@ -63,7 +63,7 @@
 ###  2. Smart Expense Splitting (Core)
 - Create split contracts with member list
 - On-chain state tracks who paid what
-- "Settle All" via **Atomic Transfer** — up to 16 members settle in one block
+- "Settle All" via **Atomic Transfer** - up to 16 members settle in one block
 - Disputes impossible: blockchain is the source of truth
 
 **Algorand Primitive:** AVM App + Atomic Group (up to 16 txns)
@@ -72,7 +72,7 @@
 - Multi-sig smart contract wallet (M-of-N approval)
 - Spending proposals visible to all members on-chain
 - Funds move only after on-chain approval
-- Transparent history — no trust required
+- Transparent history - no trust required
 
 **Algorand Primitive:** AVM App + LogicSig
 
@@ -85,7 +85,7 @@
 **Algorand Primitive:** ARC-71 NTA + ARC-69 On-chain Metadata
 
 ###  5. Transparent Campaign Fundraising (Power)
-- Smart contract escrow — nobody holds the money
+- Smart contract escrow - nobody holds the money
 - Milestone-based release: funds unlock only when goals are met
 - All donations visible on-chain with donor address + amount
 - Auto-refund if campaign fails (contract-enforced)
@@ -232,10 +232,10 @@ crescacam/
 - Local: `balance_owed`, `has_paid`
 
 **Methods:**
-- `create_split(members: list[Address])` — Initialize split group
-- `add_expense(payer: Address, amount: uint64, description: bytes)` — Log expense
-- `get_balance(member: Address) -> int64` — Check what member owes/is owed
-- `settle_all()` — Execute atomic settlement (up to 16 members)
+- `create_split(members: list[Address])` - Initialize split group
+- `add_expense(payer: Address, amount: uint64, description: bytes)` - Log expense
+- `get_balance(member: Address) -> int64` - Check what member owes/is owed
+- `settle_all()` - Execute atomic settlement (up to 16 members)
 
 ### 2. DAO Treasury (`contracts/dao_treasury/contract.py`)
 
@@ -244,10 +244,10 @@ crescacam/
 - Box: Proposals, Signer list
 
 **Methods:**
-- `initialize(signers: list[Address], threshold: uint64)` — Setup M-of-N
-- `create_proposal(recipient: Address, amount: uint64, description: bytes)` — Propose spend
-- `approve(proposal_id: uint64)` — Sign proposal
-- `execute(proposal_id: uint64)` — Release funds if threshold met
+- `initialize(signers: list[Address], threshold: uint64)` - Setup M-of-N
+- `create_proposal(recipient: Address, amount: uint64, description: bytes)` - Propose spend
+- `approve(proposal_id: uint64)` - Sign proposal
+- `execute(proposal_id: uint64)` - Release funds if threshold met
 
 ### 3. Soulbound Ticket (`contracts/soulbound_ticket/contract.py`)
 
@@ -256,10 +256,10 @@ crescacam/
 - Metadata follows ARC-69 standard
 
 **Methods:**
-- `create_event(name: bytes, max_tickets: uint64, price: uint64)` — Create event
-- `mint_ticket(buyer: Address)` — Mint frozen NFT to buyer
-- `verify_ticket(holder: Address, ticket_id: uint64) -> bool` — Gate verification
-- `revoke_ticket(ticket_id: uint64)` — Clawback for refunds
+- `create_event(name: bytes, max_tickets: uint64, price: uint64)` - Create event
+- `mint_ticket(buyer: Address)` - Mint frozen NFT to buyer
+- `verify_ticket(holder: Address, ticket_id: uint64) -> bool` - Gate verification
+- `revoke_ticket(ticket_id: uint64)` - Clawback for refunds
 
 ### 4. Fundraising Escrow (`contracts/fundraising/contract.py`)
 
@@ -268,12 +268,12 @@ crescacam/
 - Box: Milestones, Donations
 
 **Methods:**
-- `create_campaign(beneficiary: Address, goal: uint64, deadline: uint64)` — Start campaign
-- `donate(amount: uint64, anonymous: bool)` — Contribute to escrow
-- `add_milestone(description: bytes, amount: uint64)` — Define release milestone
-- `complete_milestone(milestone_id: uint64)` — Mark milestone complete
-- `release_funds(milestone_id: uint64)` — Beneficiary claim via inner txn
-- `refund()` — Claim refund if campaign failed
+- `create_campaign(beneficiary: Address, goal: uint64, deadline: uint64)` - Start campaign
+- `donate(amount: uint64, anonymous: bool)` - Contribute to escrow
+- `add_milestone(description: bytes, amount: uint64)` - Define release milestone
+- `complete_milestone(milestone_id: uint64)` - Mark milestone complete
+- `release_funds(milestone_id: uint64)` - Beneficiary claim via inner txn
+- `refund()` - Claim refund if campaign failed
 
 ---
 
@@ -373,9 +373,9 @@ Please ensure all smart contracts have corresponding tests and follow the ARC-4 
 
 ## Acknowledgments
 
-- [Algorand Foundation](https://algorand.foundation/) — For the hackathon opportunity
-- [AlgoKit](https://developer.algorand.org/algokit/) — Modern Algorand development
-- VIT Campus — Real-world inspiration
+- [Algorand Foundation](https://algorand.foundation/) - For the hackathon opportunity
+- [AlgoKit](https://developer.algorand.org/algokit/) - Modern Algorand development
+- VIT Campus - Real-world inspiration
 
 ---
 
@@ -383,6 +383,6 @@ Please ensure all smart contracts have corresponding tests and follow the ARC-4 
 
 **Built for Algorand Track 1: Future of Finance**
 
-*Cresca Campus — Finance for students, by students, on-chain.*
+*Cresca Campus - Finance for students, by students, on-chain.*
 
 </div>

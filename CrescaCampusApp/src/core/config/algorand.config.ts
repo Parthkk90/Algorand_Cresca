@@ -4,6 +4,10 @@
  */
 
 export const AlgorandConfig = {
+  // App Info
+  appName: 'CrescaCampus',
+  appVersion: '1.0.0',
+  
   // Network Configuration
   network: 'testnet' as const,
   
@@ -28,6 +32,20 @@ export const AlgorandConfig = {
   // Transaction defaults
   defaultTxnFee: 1000, // microAlgos
   minBalance: 100000, // 0.1 ALGO minimum balance
+  confirmationRounds: 4,
 } as const;
 
 export type NetworkType = typeof AlgorandConfig.network;
+
+// Helper to format microAlgos to ALGO
+export const microAlgosToAlgo = (microAlgos: number): number => microAlgos / 1_000_000;
+
+// Helper to format ALGO to microAlgos  
+export const algoToMicroAlgos = (algo: number): number => Math.floor(algo * 1_000_000);
+
+// Explorer URLs
+export const getExplorerUrl = (txId: string): string => 
+  `https://testnet.algoexplorer.io/tx/${txId}`;
+
+export const getAddressExplorerUrl = (address: string): string =>
+  `https://testnet.algoexplorer.io/address/${address}`;

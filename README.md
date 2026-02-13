@@ -7,6 +7,22 @@
 [![Algorand](https://img.shields.io/badge/Algorand-Powered-blue?logo=algorand)](https://algorand.com)
 [![AlgoKit](https://img.shields.io/badge/AlgoKit-3.0+-green)](https://developer.algorand.org/algokit/)
 [![Track](https://img.shields.io/badge/Track%201-Future%20of%20Finance-orange)]()
+[![React Native](https://img.shields.io/badge/React%20Native-Expo-61DAFB?logo=react)](https://expo.dev)
+
+---
+
+## Quick Start
+
+```bash
+# Clone and install
+cd CrescaCampusApp
+npm install
+
+# Start the app
+npx expo start
+
+# Press 'a' for Android or scan QR with Expo Go
+```
 
 ---
 
